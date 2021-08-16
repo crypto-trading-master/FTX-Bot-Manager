@@ -2,8 +2,12 @@ import json
 import ftx  # type: ignore
 import os
 import time
+
 from pprint import pprint
 from dotenv import load_dotenv
+
+print("Getting market data...")
+print()
 
 load_dotenv()
 
@@ -11,24 +15,30 @@ api_key = os.getenv("API_KEY")
 api_secret = os.getenv("API_SECRET")
 subaccount_name = os.getenv("SUBACCOUNT_NAME")
 
-'''
 with open('config.json', 'r') as f:
     config = json.load(f)
-'''
+
+minVolume24h = config["minVolume24h"]
+minVolatility = config["minVolatility"]
 
 client = ftx.FtxClient(api_key=api_key, api_secret=api_secret, subaccount_name=subaccount_name)
 
 markets = client.get_futures()
 
-# pprint(markets)
+tradeableMarkets = []  # type: list
 
 endTime = int(time.time())
 startTime = endTime - 86400
 
 for market in markets:
-    name = market["name"]
 
-    if market["perpetual"] and market["enabled"]:
+    bid = market["bid"]
+    ask = market["ask"]
+    volume = market["volumeUsd24h"]
+
+    if market["perpetual"] and market["enabled"] and (volume > minVolume24h):
+        name = market["name"]
+
         hours = client.get_historical_data(market_name=name, resolution=3600, limit=24, start_time=startTime, end_time=endTime)
 
         low = 0
@@ -40,11 +50,15 @@ for market in markets:
             if hour["low"] < low or low == 0:
                 low = hour["low"]
 
-        # TO DO: Add data to Dict List
-        # TO DO: Sort List by volatility
+        volatility = ((high / low) - 1) * 100
 
-        print(name)
-        print("High:", high)
-        print("Low:", low)
-        print("Vola:", ((high / low) - 1) * 100)
-        print()
+        if volatility > minVolatility:
+            tradeableMarket = {}
+            tradeableMarket["name"] = name
+            tradeableMarket["volatility"] = round(volatility, 2)
+            tradeableMarket["volumeM"] = round(volume / 1000000, 0)
+            tradeableMarkets.append(tradeableMarket)
+
+tradeableMarkets = sorted(tradeableMarkets, key=lambda k: k['volumeM'], reverse=True)
+
+pprint(tradeableMarkets)
