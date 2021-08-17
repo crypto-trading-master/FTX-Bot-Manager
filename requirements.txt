@@ -1,3 +1,4 @@
 ftx
 ciso8601
 python-dotenv
+pandas

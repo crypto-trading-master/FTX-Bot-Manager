@@ -2,6 +2,7 @@ import json
 import ftx  # type: ignore
 import os
 import time
+import pandas as pd
 
 from pprint import pprint
 from dotenv import load_dotenv
@@ -61,4 +62,6 @@ for market in markets:
 
 tradeableMarkets = sorted(tradeableMarkets, key=lambda k: k['volumeM'], reverse=True)
 
-pprint(tradeableMarkets)
+df = pd.DataFrame(tradeableMarkets)
+
+print(df)
