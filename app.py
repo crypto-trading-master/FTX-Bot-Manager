@@ -60,8 +60,7 @@ for market in markets:
             tradeableMarket["volumeM"] = round(volume / 1000000, 0)
             tradeableMarkets.append(tradeableMarket)
 
-tradeableMarkets = sorted(tradeableMarkets, key=lambda k: k['volumeM'], reverse=True)
-
 df = pd.DataFrame(tradeableMarkets)
+df.sort_values(by='volatility', inplace=True, ascending=False)
 
 print(df)
