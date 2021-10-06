@@ -29,7 +29,7 @@ markets = client.get_markets()
 tradeableMarkets = []  # type: list
 
 endTime = int(time.time())
-startTime = endTime - 86400
+startTime = endTime - 86400 * 3
 
 for market in markets:
 
@@ -44,7 +44,7 @@ for market in markets:
         
         name = market["name"]
 
-        hours = client.get_historical_data(market_name=name, resolution=3600, limit=24, start_time=startTime, end_time=endTime)
+        hours = client.get_historical_data(market_name=name, resolution=3600, limit=72, start_time=startTime, end_time=endTime)
 
         low = 0
         high = 0
@@ -61,7 +61,7 @@ for market in markets:
             tradeableMarket = {}
             tradeableMarket["name"] = name
             tradeableMarket["volatility"] = round(volatility, 2)
-            tradeableMarket["volumeM"] = round(volume / 1000000, 0)
+            tradeableMarket["volumeM"] = int(round(volume / 1000000, 0))
             tradeableMarkets.append(tradeableMarket)
 
 df = pd.DataFrame(tradeableMarkets)
