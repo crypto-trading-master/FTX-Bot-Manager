@@ -4,11 +4,11 @@ import os
 import time
 import pandas as pd
 
+from flask import Flask, render_template
 from pprint import pprint
 from dotenv import load_dotenv
 
-print("Getting market data...")
-print()
+app = Flask(__name__)
 
 load_dotenv()
 
@@ -24,43 +24,51 @@ minVolatility = config["minVolatility"]
 
 client = ftx.FtxClient(api_key=api_key, api_secret=api_secret, subaccount_name=subaccount_name)
 
-markets = client.get_futures()
+@ app.route('/ftx-top-pairs-spot', methods=['GET'])
+def ftx_top_pairs_spot():
 
-tradeableMarkets = []  # type: list
+    markets = client.get_markets()
 
-endTime = int(time.time())
-startTime = endTime - 86400
+    tradeableMarkets = []  # type: list
 
-for market in markets:
+    endTime = int(time.time())
+    startTime = endTime - 86400 * 3
 
-    bid = market["bid"]
-    ask = market["ask"]
-    volume = market["volumeUsd24h"]
+    for market in markets:
 
-    if market["perpetual"] and market["enabled"] and (volume > minVolume24h):
-        name = market["name"]
+        bid = market["bid"]
+        ask = market["ask"]
+        volume = market["volumeUsd24h"]
 
-        hours = client.get_historical_data(market_name=name, resolution=3600, limit=24, start_time=startTime, end_time=endTime)
+        if (market["type"] == 'spot' and 
+            market["quoteCurrency"] == 'USD' and 
+            market["enabled"] and 
+            volume > minVolume24h):
+            
+            name = market["name"]
 
-        low = 0
-        high = 0
+            hours = client.get_historical_data(market_name=name, resolution=3600, limit=72, start_time=startTime, end_time=endTime)
 
-        for hour in hours:
-            if hour["high"] > high:
-                high = hour["high"]
-            if hour["low"] < low or low == 0:
-                low = hour["low"]
+            low = 0
+            high = 0
 
-        volatility = ((high / low) - 1) * 100
+            for hour in hours:
+                if hour["high"] > high:
+                    high = hour["high"]
+                if hour["low"] < low or low == 0:
+                    low = hour["low"]
 
-        if volatility > minVolatility:
-            tradeableMarket = {}
-            tradeableMarket["name"] = name
-            tradeableMarket["volatility"] = round(volatility, 2)
-            tradeableMarket["volumeM"] = round(volume / 1000000, 0)
-            tradeableMarkets.append(tradeableMarket)
+            volatility = ((high / low) - 1) * 100
 
-df = pd.DataFrame(tradeableMarkets)
-df.sort_values(by='volatility', inplace=True, ascending=False)
+            if volatility > minVolatility:
+                tradeableMarket = {}
+                tradeableMarket["name"] = name
+                tradeableMarket["volatility"] = round(volatility, 2)
+                tradeableMarket["volumeM"] = round(volume / 1000000, 0)
+                tradeableMarkets.append(tradeableMarket)
 
-print(df)
+    df = pd.DataFrame(tradeableMarkets)
+    df.sort_values(by='volumeM', inplace=True, ascending=False)    
+
+    return render_template('data.html',  tables=[df.to_html(classes='data', header="true")])
+
