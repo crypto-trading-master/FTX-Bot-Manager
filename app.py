@@ -41,7 +41,7 @@ def ftx_top_pairs_spot():
         volume = market["volumeUsd24h"]
 
         if (market["type"] == 'spot' and 
-            market["quoteCurrency"] == 'USD' and 
+            (market["quoteCurrency"] == 'USD' or market["quoteCurrency"] == 'BTC') and 
             market["enabled"] and 
             volume > minVolume24h):
             
