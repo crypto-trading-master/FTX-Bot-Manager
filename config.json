@@ -1,4 +1,4 @@
 {
-    "minVolatility": 10,
-    "minVolume24h": 5000000
+    "minVolatility": 1,
+    "minVolume24h": 100000
 }
