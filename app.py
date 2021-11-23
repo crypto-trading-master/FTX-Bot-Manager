@@ -87,11 +87,11 @@ def ftx_top_pairs_futures():
         bid = market["bid"]
         ask = market["ask"]
         volume = market["volumeUsd24h"]
+        name = market["name"]
 
         if (market["enabled"] and 
-            volume > minVolume24h):
-            
-            name = market["name"]
+            volume > minVolume24h and
+            "PERP" in name):            
 
             hours = client.get_historical_data(market_name=name, resolution=3600, limit=72, start_time=startTime, end_time=endTime)
 
